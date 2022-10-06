@@ -61,6 +61,7 @@ return biddersData[_address];
 
 //withdrawBalance from the dapp
 function withdrawBalance()public payable Onlyowner{
+    require(state == State.Inactive);
         owner.transfer(address(this).balance);
     }
 }
