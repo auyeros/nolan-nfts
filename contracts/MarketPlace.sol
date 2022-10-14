@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
-
 pragma solidity >=0.7.0 <0.9.0;
+
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 contract MarketPlace{
 // owner
@@ -9,10 +10,23 @@ contract MarketPlace{
  address highestBidder;
  uint highestOffer;
  //emum
+  IERC721 s_NFT;
+  
  enum State {Active, Inactive}  
- State public state = State.Inactive;
- mapping(address => uint) biddersData;
 
+  struct Sale{
+      address seller;
+      uint256 nftId;
+      uint256 price;
+      State Status;
+  }
+
+ State public state = State.Inactive;
+
+ //mappings
+ mapping(address => uint) biddersData;
+ mapping(uint256 => Sale) public s_sales;
+ mapping(uint256 => uint256) public r_refNFTs;
 
 //events
  event OferringPlaced(
@@ -27,6 +41,7 @@ event balanceWithdrawn(
  event OperatorChanged(
   string newSate
 );
+event AuctionEnded(address winner, uint amount);
 
 constructor(){
     owner = payable(msg.sender);
@@ -40,7 +55,7 @@ constructor(){
    //changeOperator()
  function changeOperator(State newSate) public Onlyowner{
        state = newSate; 
-       emit OperatorChanged("auction closed");
+       emit OperatorChanged("auction closed");// emit event
    }
 
    //placeOffering()
@@ -59,7 +74,11 @@ constructor(){
 
 //closeOffering function
 function closeOffering() public Onlyowner{
+  require (state == State.Active);       
 
+        emit AuctionEnded(highestBidder, highestOffer);
+      // owner.transfer(highestOffer);
+      state = State.Inactive;
       emit offeringClosed("Offering Closed"); // emit event
 }
 // highest offer
@@ -83,8 +102,9 @@ function withdrawUserBalance(address payable _address) public {
 }
 
 
-function viewOfferingNft() public view {
-     
+function viewOfferingNft() public view returns(address){
+   
+     return highestBidder;
 }
 //withdrawBalance from the dapp
 function withdrawBalance()public payable Onlyowner{
