@@ -7,7 +7,7 @@ contract Marketplace{
     //state 
   IERC721 s_NFTs;
 
-  address isOwner;
+  address payable isOwner;
  //state of contract 
 
   enum Status{
@@ -93,8 +93,20 @@ contract Marketplace{
          uint256 price = s_sales[pos].price;
          s_sales[pos].owner = msg.sender;
          s_sales[pos].status = Status.Inactive;
-        // require(value.transferFrom(msg.sender, oldOwner, price), "error transfer token");
+         //require(value.transferFrom(msg.sender, oldOwner, price), "error transfer token");
 
        }
+// withdrawBalance
+        function withdrawBalance() public onlyOwner{
+     require(msg.sender == isOwner);
+        isOwner.transfer(address(this).balance);
+        emit balanceWithdrawn("balance"); // emit event 
+    }
+
+
+    //events
+    event balanceWithdrawn(
+      string balanceInApp
+    );
 
 }
