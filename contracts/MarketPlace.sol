@@ -1,32 +1,41 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity >=0.7.0 <0.9.0;
+pragma solidity 0.8.7;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-
+import "@openzeppelin/contracts/utils/Counters.sol";
 contract MarketPlace{
-// owner
- address payable public owner;
- //high offer 
- address highestBidder;
- uint highestOffer;
- //emum
-  IERC721 s_NFT;
-  
- enum State {Active, Inactive}  
+    
+   // owner
+address payable public owner;
+  //high offer 
+address highestBidder;
+uint highestOffer;
 
-  struct Sale{
+IERC721 s_NFT;
+   //emum
+enum State {Active, Inactive, Canceled}  
+
+struct Sale{
       address seller;
       uint256 nftId;
       uint256 price;
       State Status;
-  }
+}
 
- State public state = State.Inactive;
+State public state = State.Inactive;
 
  //mappings
  mapping(address => uint) biddersData;
  mapping(uint256 => Sale) public s_sales;
- mapping(uint256 => uint256) public r_refNFTs;
+ mapping(uint256 => uint256) public s_refNFTs;
+mapping(uint256 => uint256) public s_security;
+
+
+
+// counters
+using Counters for Counters.Counter;
+
+Counters.Counter s_counter;
 
 //events
  event OferringPlaced(
@@ -43,14 +52,23 @@ event balanceWithdrawn(
 );
 event AuctionEnded(address winner, uint amount);
 
-constructor(){
-    owner = payable(msg.sender);
-}
+
 // function modifier
  modifier Onlyowner() {
        require(owner == msg.sender, "you need to be the project owner");
        _;
    }
+
+     modifier securityFrontRunning(uint256 p_nftID){
+          require(s_security[p_nftID] ==0 || s_security[p_nftID] > block.number, "error security");
+          s_security[p_nftID] = block.number;
+          _;
+     }
+
+   //constructor
+constructor(){
+    owner = payable(msg.sender);
+}
 
    //changeOperator()
  function changeOperator(State newSate) public Onlyowner{
@@ -73,7 +91,7 @@ constructor(){
 
 
 //closeOffering function
-function closeOffering() public Onlyowner{
+ function closeOffering() public Onlyowner{
   require (state == State.Active);       
 
         emit AuctionEnded(highestBidder, highestOffer);
@@ -82,18 +100,18 @@ function closeOffering() public Onlyowner{
       emit offeringClosed("Offering Closed"); // emit event
 }
 // highest offer
-function highestBid()public view returns (uint){
+ function highestBid()public view returns (uint){
     return highestOffer;
 }
 // highest offer address
-function addressFromHB()public view returns(address){
+ function addressFromHB()public view returns(address){
     return highestBidder;
 }
 //viewBalance
-function viewBalance(address _address) public view returns(uint){
+ function viewBalance(address _address) public view returns(uint){
 return biddersData[_address];
 }
-function withdrawUserBalance(address payable _address) public {
+ function withdrawUserBalance(address payable _address) public {
     require(state == State.Active);
     
     if(biddersData[_address]>0){
