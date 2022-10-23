@@ -32,7 +32,7 @@ contract Marketplace{
 // state of the auction 
  enum StateOfAuction {Active, Inactive, Canceled}  
 
-
+uint highestOffer;
   StateOfAuction public stateA = StateOfAuction.Inactive;
 
   // struc for the nft in the auction
@@ -71,6 +71,9 @@ contract Marketplace{
         s_NFTs = IERC721(p_nftsContract);
     }
 
+//////////////////////////////////////////////
+///////////////DIRECT BUY
+/////////////////////////////////////////////
 
 // open sale(for sale one nft)
     function openSale(uint256 p_nftID, uint256 p_price) public securityFrontRunning(p_nftID) {
@@ -137,12 +140,17 @@ contract Marketplace{
 ////////////////////////////////////////////////////////////////////////   
 ////////////////////auction
 /////////////////////////////////////////
+
+//////////////////////////////////////////
   //change operator of the auction
+////////////////////////////////////////
   function changeOperator(StateOfAuction newSate) public onlyOwner{
        stateA = newSate; 
        emit OperatorChanged("auction closed");// emit event
    }
-
+///////////////
+// StartAuction
+//////////////
    function startAuction(uint256 p_nftID, uint256 p_price) public securityFrontRunning(p_nftID) {
         if (s_salesA[p_nftID].owner == address(0)) {
             s_NFTs.transferFrom(msg.sender, address(this), p_nftID);
@@ -164,16 +172,56 @@ contract Marketplace{
             s_salesA[p_nftID].price = p_price;
         }
   }
- 
-     
+
+
+
+
+
+
+
+
+
+////////////////////////////
+////place offering
+///////////////////////////
+
+function placeOfferring(uint256 p_nftID) public payable{
+    //verify value is not zero
+    uint calculateAmount = biddersData[msg.sender] + msg.value;
+    require (s_salesA[p_nftID].status == StateOfAuction.Active);
+    require(msg.value >0, "bid amount cannot be 0");
+    require(calculateAmount >highestOffer, "Highest bid alredy present");  
+    biddersData[msg.sender] = calculateAmount;
+    highestOffer = calculateAmount;
+    highestBidder=msg.sender;
+    emit OferringPlaced("offer sent"); // emit event
+  }
+
+ //////////////////////
+ //////Close offering
+ /////////////////////
+     function closeOffering(uint256 p_nftID) public securityFrontRunning(p_nftID){
+        require(s_salesA[p_nftID].owner == msg.sender);
+        s_salesA[p_nftID].status = StateOfAuction.Inactive;
+
+
+              emit auctionClosed("auction closed");                                
+     }  
     //events 
 
     event OperatorChanged(
       string newSate
    );
 
+    event auctionClosed(
+      string
+    );
+
     event balanceWithdrawn(
       string balanceInApp
+    );
+    event OferringPlaced(
+      string offer
     );
             
 }
