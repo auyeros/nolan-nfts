@@ -20,7 +20,7 @@ contract Auction {
     event balanceWithdrawn(string
     );
     address payable public owner;
-    address payable public seller;
+
    uint public endAt;
    enum State{
         Inactive,
@@ -50,10 +50,6 @@ contract Auction {
 //        require(bids[msg.sender] == msg.sender, "you dont are one bid");
 //        _;
 //    }
-modifier onlySeller() {
-       require(seller == msg.sender, "you need to be seller");
-       _;
-   }
 
 
        //changeOperator
@@ -62,18 +58,15 @@ modifier onlySeller() {
        emit OperatorChanged("auction closed");// emit event
    }
 
-     function setSeller(address payable _seller) public Onlyowner{
-         seller = _seller;
-     }
 
-  
 /// START AUCTION
-    function start(IERC721 _nft, uint _nftId, uint startingBid, address NftAddress) external  onlySeller Onlyowner{
+    function start(IERC721 _nft, uint _nftId, uint startingBid, address NftAddress) external Onlyowner{
         require (status == State.Inactive);
+        require(msg.sender == owner, "You did not start the auction!");
         highestBid = startingBid;
         nft = _nft;
         nftId = _nftId;
-        listNft[NftAddress] = _nftId;
+    
         //listNft[NftAddress] = _nftId;
        nft.transferFrom(msg.sender, address(this), nftId);
         status = State.Active;
