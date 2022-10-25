@@ -30,7 +30,7 @@ contract Auction {
 
     State public status = State.Inactive;
 
-          
+    
               
     IERC721 public nft;
     uint public nftId;
@@ -95,7 +95,7 @@ modifier onlySeller() {
 
     function placeOffering() external payable {
         require (status == State.Active, "aucition no active");
-        require(block.timestamp < endAt, "Ended!");
+      // require(block.timestamp < endAt, "Ended!");
         require(msg.value > highestBid);
 
         if (highestBidder != address(0)) {
@@ -150,5 +150,10 @@ modifier onlySeller() {
     }
     function viewOfferingNft() public view returns(uint){
         return highestBid;
+    }
+    function cancelAuction() public Onlyowner{
+        require (status == State.Active, "aucition inactive");
+        status = State.Cancelled;
+        endAt = block.timestamp;
     }
 }
