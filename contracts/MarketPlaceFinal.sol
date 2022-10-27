@@ -81,11 +81,11 @@ contract MarketPlaceNFT is ReentrancyGuard {
     }
 
     function getTotalPrice(uint256 _itemId) public view returns (uint256) {
-        return ((items[_itemId].price * (100 + feePercent)) / 100);
+        return ((items[_itemId].price * (100 + feePercent)) / 100); //calculate total price
     }
 
     function setSeller(address payable _seller) public onlyOwner {
-        seller.push(_seller);
+        seller.push(_seller); //push seller
     }
 
     ///events
@@ -108,6 +108,12 @@ contract MarketPlaceNFT is ReentrancyGuard {
     ////////////////////////////// Auction code
     ///////////////////////////////////////////////////////////////////////////////
 
+enum State {
+        Active,
+        Inactive,
+        Canceled
+    }
+
     struct itemAuction {
         uint256 itemId;
         IERC721 nft;
@@ -116,16 +122,32 @@ contract MarketPlaceNFT is ReentrancyGuard {
         address payable seller;
         State state;
     }
-
-    enum State {
-        Active,
-        Inactive,
-        Canceled
-    }
+    uint256 public itemCountA;
+    
     mapping(uint256 => itemAuction) public itemsAuction;
 
-    function changeOperator( uint _itemId, State newState) public onlyOwner {
-        itemAuction storage ItemAuction = itemsAuction[_itemId];
-        ItemAuction.state == newState;
+    //change operator
+    function changeOperator(uint256 _itemId, State _newState) public onlyOwner {
+       itemAuction storage ItemAuction = itemsAuction[_itemId];
+        ItemAuction.state = _newState;
+    }
+
+    //start nft auction
+    function startAuction(
+        IERC721 _nftA,
+        uint256 _tokenId,
+        uint256 _startPrice
+    ) public {
+        require(_startPrice > 0, "price must be greater than zero");
+        itemCountA++;
+        _nftA.transferFrom(msg.sender, address(this), _tokenId);
+        itemsAuction[itemCountA] = itemAuction(
+            itemCountA,
+            _nftA,
+            _tokenId,
+            _startPrice,
+            payable(msg.sender),
+            State.Active
+        );
     }
 }
