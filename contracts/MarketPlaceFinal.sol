@@ -68,7 +68,7 @@ contract MarketPlaceNFT is ReentrancyGuard {
             "not enough ether to cover item price and market fee"
         ); //require anti scam
         item.seller.transfer(item.price); // send value to seller
-        feeAccount.transfer(_totalPrice - item.price); //fees
+        feeAccount.transfer(_totalPrice - item.price); //fee for nft marketplace
         item.sold = true; // set sold = true
         item.nft.transferFrom(address(this), msg.sender, item.tokenId); // trasnfer the nft to the buyer
         emit NftPurchased(
@@ -106,29 +106,36 @@ contract MarketPlaceNFT is ReentrancyGuard {
 
     ///////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////// Auction code
-    ///////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////////////
 
-enum State {
+    enum State {
+        //State of items
         Active,
         Inactive,
         Canceled
     }
 
     struct itemAuction {
+        // struct of itemAuction
         uint256 itemId;
         IERC721 nft;
         uint256 tokenId;
         uint256 startPrice;
         address payable seller;
         State state;
+        bool sold;
     }
-    uint256 public itemCountA;
-    
-    mapping(uint256 => itemAuction) public itemsAuction;
+    uint256 public itemCountA; ////itemCount
+
+    mapping(uint256 => itemAuction) public itemsAuction; ///mapping de los items
+    mapping(address => uint256) public bids; //bids
+
+    address public highestBidder;
+    uint256 public highestBid;
 
     //change operator
     function changeOperator(uint256 _itemId, State _newState) public onlyOwner {
-       itemAuction storage ItemAuction = itemsAuction[_itemId];
+        itemAuction storage ItemAuction = itemsAuction[_itemId];
         ItemAuction.state = _newState;
     }
 
@@ -147,7 +154,46 @@ enum State {
             _tokenId,
             _startPrice,
             payable(msg.sender),
-            State.Active
+            State.Active,
+            false
         );
     }
+
+    function placeOffering(uint256 _itemId) public payable {
+        itemAuction storage itemA = itemsAuction[_itemId];
+        require(State.Active == itemA.state);
+        require(itemA.sold == false);
+        require(msg.value > highestBid);
+        if (highestBidder != address(0)) {
+            bids[highestBidder] += highestBid;
+        }
+        highestBid = msg.value;
+        highestBidder = msg.sender;
+        emit Bid(highestBidder, highestBid);
+    }
+
+    event Bid(address bidderAddress, uint256 bidderOffer); // event with best bidder
+
+    function closeOffering(uint256 _itemId) external {
+        itemAuction storage itemA = itemsAuction[_itemId];
+        require(State.Active == itemA.state);
+        //feeAccount.transfer(highestBid - item.price); 
+        //   require(block.timestamp >= endAt, "Auction is still ongoing!");
+        // if (highestBidder != address(0)) {
+        //    (bool sent, bytes memory data) = owner.call{value: highestBid}("close");
+        // require(sent, "Could not pay seller!");
+   //     nft.transferFrom(address(this), highestBidder, nftId);
+        //      owner.transfer(highestBid);
+
+        //require(highestBidder.transfer(highestBid, address(this), (sent / 100) * 3), "Error transfer fee"); // fee 3%
+
+        //    } else {
+        //        nft.transfer(owner, nftId);
+        //   }
+
+        //  status = State.Inactive;
+        emit End(highestBidder, highestBid);
+    }
+
+event End(address Winner, uint BestOffer);
 }
