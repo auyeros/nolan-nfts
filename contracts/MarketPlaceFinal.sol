@@ -54,7 +54,7 @@ contract MarketPlaceNFT is ReentrancyGuard {
             payable(msg.sender),
             false
         );
-        emit offer(itemCount, address(_nft), _tokenId, _price, msg.sender);
+        emit newNFT(itemCount, address(_nft), _tokenId, _price, msg.sender);
     }
 
     //buy direct
@@ -89,7 +89,7 @@ contract MarketPlaceNFT is ReentrancyGuard {
     }
 
     ///events
-    event offer(
+    event newNFT(
         uint256 itemId,
         address indexed nft,
         uint256 tokenId,
@@ -164,6 +164,7 @@ contract MarketPlaceNFT is ReentrancyGuard {
         require(State.Active == itemA.state);
         require(itemA.sold == false);
         require(msg.value > highestBid);
+         itemA.startPrice = msg.value;
         if (highestBidder != address(0)) {
             bids[highestBidder] += highestBid;
         }
@@ -177,6 +178,11 @@ contract MarketPlaceNFT is ReentrancyGuard {
     function closeOffering(uint256 _itemId) external {
         itemAuction storage itemA = itemsAuction[_itemId];
         require(State.Active == itemA.state);
+        require(itemA.sold == false);
+        itemA.sold = true;
+        itemA.seller.transfer(itemA.startPrice); // send value to seller
+
+
         //feeAccount.transfer(highestBid - item.price); 
         //   require(block.timestamp >= endAt, "Auction is still ongoing!");
         // if (highestBidder != address(0)) {
