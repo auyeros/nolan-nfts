@@ -8,8 +8,8 @@ contract MarketPlaceNFT is ReentrancyGuard {
     //state variables
 
     address payable public immutable feeAccount; // account receives fees
-    uint256 public immutable feePercent;
-    uint256 public itemCount;
+    uint256 public immutable feePercent; //fee percentage
+    uint256 public itemCount; 
 
     struct Item {
         uint256 itemId;
@@ -108,8 +108,10 @@ contract MarketPlaceNFT is ReentrancyGuard {
     ////////////////////////////// Auction code
     ///////////////////////////////////////////////////////////////////////////////////////////
 
+
+
+//State of items
     enum State {
-        //State of items
         Active,
         Inactive,
         Canceled
@@ -124,14 +126,13 @@ contract MarketPlaceNFT is ReentrancyGuard {
         address payable seller;
         State state;
         bool sold;
+        address payable highestBidder;// best bidder address
+        uint256 highestBid; // best bid amount
     }
     uint256 public itemCountA; ////itemCount
 
     mapping(uint256 => itemAuction) public itemsAuction; ///mapping de los items
     mapping(address => uint256) public bids; //bids
-
-    address public highestBidder;
-    uint256 public highestBid;
 
     //change operator
     function changeOperator(uint256 _itemId, State _newState) public onlyOwner {
@@ -155,7 +156,9 @@ contract MarketPlaceNFT is ReentrancyGuard {
             _startPrice,
             payable(msg.sender),
             State.Active,
-            false
+            false,
+            payable(address(0)),
+            0
         );
     }
 
@@ -163,8 +166,13 @@ contract MarketPlaceNFT is ReentrancyGuard {
         itemAuction storage itemA = itemsAuction[_itemId];
         require(State.Active == itemA.state);
         require(itemA.sold == false);
-        require(msg.value > highestBid);
-         itemA.startPrice = msg.value;
+        require(msg.value > itemA._startPrice);
+        require(msg.value > itemA.highestBid);
+        // itemA.highestBid = msg.value;
+        // itemA.highestBidder = payable(msg.sender);
+
+
+
         if (highestBidder != address(0)) {
             bids[highestBidder] += highestBid;
         }
