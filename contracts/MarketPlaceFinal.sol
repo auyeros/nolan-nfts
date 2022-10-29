@@ -136,10 +136,10 @@ contract MarketPlaceNFT is ReentrancyGuard {
     mapping(address => uint256) public bids; //bids
 
     //change operator
-    function changeOperator(uint256 _itemId, State _newState) public onlyOwner {
+    function changeOperator(uint256 _itemId, State _newState) public {
         itemAuction storage ItemAuction = itemsAuction[_itemId];
         _itemId = ItemAuction.itemId;
-        require(msg.sender == ItemAuction.seller);
+        require(msg.sender == ItemAuction.seller, "you dont are the owner of the nft");
         ItemAuction.state = _newState;
     }
      
@@ -175,7 +175,7 @@ contract MarketPlaceNFT is ReentrancyGuard {
     function placeOffering(uint256 _itemId) public payable {
         itemAuction storage itemA = itemsAuction[_itemId];
         require(State.Active == itemA.state, "error state is inactive");
-        require(itemA.sold == false, "item sold");
+        require(itemA.sold == false, "error item sold");
         require(msg.value > itemA.startPrice, "error we need more ether");
         require(msg.value > itemA.highestBid, "error you need send more ether");
         
@@ -191,14 +191,15 @@ contract MarketPlaceNFT is ReentrancyGuard {
 
     function closeOffering(uint256 _itemId) external {
         itemAuction storage itemA = itemsAuction[_itemId]; 
-        uint256 _totalPrice = getTotalPriceAuction(_itemId);
-        require(State.Active == itemA.state);
-        require(itemA.seller == msg.sender);
-        require(itemA.sold == false);
-        itemA.sold = true;
+       // uint256 _totalPrice = getTotalPriceAuction(_itemId);
+        require(State.Active == itemA.state, "state is inactive or canceled");
+        require(itemA.seller == msg.sender, "you dont are the owner of the nft");
+        require(itemA.sold == false, "error nft sold");
+       // itemA.sold = true;
         itemA.state = State.Inactive;
         itemA.seller.transfer(itemA.highestBid); // send value to seller
-        feeAccount.transfer(_totalPrice - itemA.highestBid); //fee for nft marketplace
+        uint mount = itemA.highestBid;
+        feeAccount.transfer(mount); //fee for nft marketplace
 
 
         //feeAccount.transfer(highestBid - item.price); 
