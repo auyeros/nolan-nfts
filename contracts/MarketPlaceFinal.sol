@@ -206,7 +206,7 @@ contract MarketPlaceNFT is ReentrancyGuard {
         ItemAuction.sold = true;
         ItemAuction.state = State.Inactive;
         feeAccount.transfer(_totalPrice); //fee for nft marketplace
-        ItemAuction.seller.transfer(ItemAuction.highestBid); // send value to seller
+        ItemAuction.seller.transfer(ItemAuction.highestBid - _totalPrice); // send value to seller
         emit End(ItemAuction.highestBidder, ItemAuction.highestBid);
     }
 
