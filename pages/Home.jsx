@@ -3,7 +3,9 @@ import styles from "./styles/HomePage.module.css";
 const Home = () => {
   return (
     <div className={styles.homeDiv}>
-      <div className={styles.navbar}></div>
+      <div className={styles.navbar}>
+        
+      </div>
     </div>
   );
 };
