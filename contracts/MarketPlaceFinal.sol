@@ -218,5 +218,13 @@ contract MarketPlaceNFT is ReentrancyGuard {
         emit End(ItemAuction.highestBidder, ItemAuction.highestBid);
     }
 
+    function cancelAuction(uint256 _itemId) external {
+        itemAuction storage ItemAuction = itemsAuction[_itemId];
+        require(msg.sender == ItemAuction.seller, "you dont are the owner of the nft");
+        require(ItemAuction.sold != true);
+        ItemAuction.nft.transferFrom(address(this), msg.sender, ItemAuction.tokenId); // trasnfer the nft to ex seller
+        ItemAuction.state = State.Canceled;
+    }
+
     event End(address Winner, uint256 BestOffer);
 }
