@@ -179,7 +179,7 @@ contract MarketPlaceNFT is ReentrancyGuard {
             payable(msg.sender),
             State.Active,
             false,
-            _endAt,
+            _endAt + block.timestamp,
             payable(address(0)),
             0      
         );
@@ -210,7 +210,7 @@ contract MarketPlaceNFT is ReentrancyGuard {
             msg.sender == ItemAuction.seller,
             "you dont are the owner of the nft"
         );
-       // require(ItemAuction.endAt == 0);
+        require(ItemAuction.endAt == 0);
         require(ItemAuction.sold == false, "error nft sold");
         ItemAuction.sold = true;
         ItemAuction.state = State.Inactive;
