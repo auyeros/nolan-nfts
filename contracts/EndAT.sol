@@ -148,6 +148,7 @@ contract MarketPlaceNFT is ReentrancyGuard {
         address payable seller;
         State state;
         bool sold;
+        uint256 startAt;
         uint256 endAt;
         address payable highestBidder; // best bidder address
         uint256 highestBid; // best bid amount
@@ -191,8 +192,7 @@ contract MarketPlaceNFT is ReentrancyGuard {
     function startAuction(
         IERC721 _nftA,
         uint256 _tokenId,
-        uint256 _startPrice,
-        uint256 _endAt
+        uint256 _startPrice
     ) public {
         require(_startPrice > 0, "price must be greater than zero");
         itemCountA++;
@@ -205,12 +205,26 @@ contract MarketPlaceNFT is ReentrancyGuard {
             payable(msg.sender),
             State.Active,
             false,
-            _endAt + block.timestamp,
+            block.timestamp,
+            7 days,
             payable(address(0)),
             0
         );
+        emit newNFTAuction(
+            itemCountA,
+            address(_nftA),
+            _tokenId,
+            _startPrice,
+            msg.sender
+        );
     }
-
+    event newNFTAuction(
+        uint256 itemId,
+        address indexed nft,
+        uint256 tokenId,
+        uint256 price,
+        address indexed seller
+    );
     function placeOffering(uint256 _itemId) public payable {
         itemAuction storage itemA = itemsAuction[_itemId];
         require(State.Active == itemA.state, "error state is inactive");
@@ -237,11 +251,12 @@ contract MarketPlaceNFT is ReentrancyGuard {
             msg.sender == ItemAuction.seller,
             "you dont are the owner of the nft"
         );
-        require(ItemAuction.endAt == 0);
+        //require(ItemAuction.endAt == 0);
         require(ItemAuction.sold == false, "error nft sold");
         ItemAuction.sold = true;
         ItemAuction.state = State.Inactive;
         feeAccount.transfer(_totalPrice); //fee for nft marketplace
+       // withdraw(); //trasnfer money for nft creator
         ItemAuction.seller.transfer(ItemAuction.highestBid - _totalPrice); // send value to seller
         emit End(ItemAuction.highestBidder, ItemAuction.highestBid);
     }
