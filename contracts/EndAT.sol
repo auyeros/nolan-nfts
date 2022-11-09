@@ -206,7 +206,7 @@ contract MarketPlaceNFT is ReentrancyGuard {
             State.Active,
             false,
             block.timestamp,
-            7 days,
+            block.timestamp + 7 days,
             payable(address(0)),
             0
         );
@@ -223,7 +223,9 @@ contract MarketPlaceNFT is ReentrancyGuard {
         address indexed nft,
         uint256 tokenId,
         uint256 price,
-        address indexed seller
+        address indexed seller,
+        uint256 startAt,
+        uint256 endAt
     );
     function placeOffering(uint256 _itemId) public payable {
         itemAuction storage itemA = itemsAuction[_itemId];
@@ -251,7 +253,7 @@ contract MarketPlaceNFT is ReentrancyGuard {
             msg.sender == ItemAuction.seller,
             "you dont are the owner of the nft"
         );
-        //require(ItemAuction.endAt == 0);
+        require(ItemAuction.endAt < block.timestamp, "error time is not over");
         require(ItemAuction.sold == false, "error nft sold");
         ItemAuction.sold = true;
         ItemAuction.state = State.Inactive;
