@@ -233,7 +233,7 @@ contract MarketPlaceNFT is ReentrancyGuard {
         require(itemA.sold == false, "error item sold");
         require(msg.value > itemA.startPrice, "error we need more ether");
         require(msg.value > itemA.highestBid, "error you need send more ether");
-        require(itemA.endAt > 0);
+        require(itemA.endAt > block.timestamp, "error auction is over");
         if (itemA.highestBidder != msg.sender) {
             //security
             itemA.highestBidder.transfer(itemA.highestBid); //trasnfer money for old best bidder
