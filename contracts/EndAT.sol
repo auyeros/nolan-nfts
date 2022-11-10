@@ -1,7 +1,8 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.7;
 
-import "./ERC721Nolan.sol";
+import "./ERC721Nolan.sol";  // import the ERC721Nolan contract
+import "erc721a/contracts/ERC721A.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
@@ -244,7 +245,7 @@ contract MarketPlaceNFT is ReentrancyGuard {
         emit Bid(itemA.highestBidder, itemA.highestBid); // event new best bidder
     }
 
-    event Bid(address bidderAddress, uint256 bidderOffer); // event with best bidder
+   
 
     function closeOffering(uint256 _itemId) external payable {
         uint256 _totalPrice = getTotalPriceAuction(_itemId);
@@ -259,7 +260,7 @@ contract MarketPlaceNFT is ReentrancyGuard {
         ItemAuction.sold = true;
         ItemAuction.state = State.Inactive;
         feeAccount.transfer(_totalPrice); //fee for nft marketplace
-       // withdraw(); //trasnfer money for nft creator
+        withdraw(ItemAuction.highestBid); //trasnfer money for nft creator
         ItemAuction.seller.transfer(ItemAuction.highestBid - _totalPrice); // send value to seller
         emit End(ItemAuction.highestBidder, ItemAuction.highestBid);
     }
@@ -278,6 +279,6 @@ contract MarketPlaceNFT is ReentrancyGuard {
         ); // trasnfer the nft to ex seller
         ItemAuction.state = State.Canceled;
     }
-
+    event Bid(address bidderAddress, uint256 bidderOffer); // event with best bidder
     event End(address Winner, uint256 BestOffer);
 }
