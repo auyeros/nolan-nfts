@@ -1,6 +1,7 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.7;
 
+import "./ERC721Nolan.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
@@ -206,7 +207,7 @@ contract MarketPlaceNFT is ReentrancyGuard {
             State.Active,
             false,
             block.timestamp,
-            7 days,
+            block.timestamp + 7 days,
             payable(address(0)),
             0
         );
@@ -223,7 +224,9 @@ contract MarketPlaceNFT is ReentrancyGuard {
         address indexed nft,
         uint256 tokenId,
         uint256 price,
-        address indexed seller
+        address indexed seller,
+        uint256 startAt,
+        uint256 endAt
     );
     function placeOffering(uint256 _itemId) public payable {
         itemAuction storage itemA = itemsAuction[_itemId];
@@ -231,7 +234,7 @@ contract MarketPlaceNFT is ReentrancyGuard {
         require(itemA.sold == false, "error item sold");
         require(msg.value > itemA.startPrice, "error we need more ether");
         require(msg.value > itemA.highestBid, "error you need send more ether");
-        require(itemA.endAt > 0);
+        require(itemA.endAt > block.timestamp, "error auction is over");
         if (itemA.highestBidder != msg.sender) {
             //security
             itemA.highestBidder.transfer(itemA.highestBid); //trasnfer money for old best bidder
@@ -251,7 +254,7 @@ contract MarketPlaceNFT is ReentrancyGuard {
             msg.sender == ItemAuction.seller,
             "you dont are the owner of the nft"
         );
-        //require(ItemAuction.endAt == 0);
+        require(ItemAuction.endAt < block.timestamp, "error time is not over");
         require(ItemAuction.sold == false, "error nft sold");
         ItemAuction.sold = true;
         ItemAuction.state = State.Inactive;
