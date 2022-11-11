@@ -18,7 +18,7 @@ contract MarketPlaceNFT is ReentrancyGuard {
    
     struct Item {
         uint256 itemId;
-        IERC721 nft;
+        ERC721A nft;
         uint256 tokenId;
         uint256 price;
         address payable seller;
@@ -56,7 +56,7 @@ contract MarketPlaceNFT is ReentrancyGuard {
     
     ///sell NFT
     function sellNFT(
-        IERC721 _nft,
+        ERC721A _nft,
         uint256 _tokenId,
         uint256 _price
     ) external nonReentrant {
