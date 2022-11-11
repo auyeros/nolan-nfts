@@ -11,7 +11,7 @@ contract MarketPlaceNFT is ReentrancyGuard {
 
     address payable public immutable feeAccount; // account receives fees
     uint256 public immutable feePercent; //fee percentage
-    uint256 public itemCount;
+    uint256 public itemCount; //item count for the items in the marketplace
 
     mapping(uint256 => uint256) s_security;
 
@@ -23,11 +23,11 @@ contract MarketPlaceNFT is ReentrancyGuard {
         uint256 price;
         address payable seller;
         bool sold;
-    }
+    } // item struct for the marketplace
 
-    address[] public seller;
+    address[] public seller; // sellers list
 
-    mapping(uint256 => Item) public items;
+    mapping(uint256 => Item) public items; // list of items in the marketplace
 
 
  modifier securityFrontRunning(uint256 _itemId) {
@@ -39,7 +39,7 @@ contract MarketPlaceNFT is ReentrancyGuard {
 
         s_security[_itemId] = block.number;
         _;
-    }
+    } // security modifier to prevent frontrunning
     constructor(uint256 _feePercent) {
         feeAccount = payable(msg.sender);
         feePercent = _feePercent;
@@ -51,6 +51,9 @@ contract MarketPlaceNFT is ReentrancyGuard {
     }
 
     //functions
+
+
+    
     ///sell NFT
     function sellNFT(
         IERC721 _nft,
