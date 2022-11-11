@@ -3,7 +3,7 @@ pragma solidity >=0.8.9 <0.9.0;
 import "erc721a/contracts/ERC721A.sol";
 import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/utils/cryptography/MerkleProof.sol';
-import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 contract LTOTest is ERC721A, Ownable, ReentrancyGuard {
 

@@ -1,6 +1,8 @@
 //SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.7;
 
+//import "./ERC721Nolan.sol";  // import the ERC721Nolan contract
+import "erc721a/contracts/ERC721A.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
@@ -9,21 +11,35 @@ contract MarketPlaceNFT is ReentrancyGuard {
 
     address payable public immutable feeAccount; // account receives fees
     uint256 public immutable feePercent; //fee percentage
-    uint256 public itemCount;
+    uint256 public itemCount; //item count for the items in the marketplace
 
+    mapping(uint256 => uint256) s_security;
+
+   
     struct Item {
         uint256 itemId;
-        IERC721 nft;
+        ERC721A nft;
         uint256 tokenId;
         uint256 price;
         address payable seller;
         bool sold;
-    }
+    } // item struct for the marketplace
 
-    address[] public seller;
+    address[] public seller; // sellers list
 
-    mapping(uint256 => Item) public items;
+    mapping(uint256 => Item) public items; // list of items in the marketplace
 
+
+ modifier securityFrontRunning(uint256 _itemId) {
+                Item storage item = items[_itemId];
+        require(
+            s_security[_itemId] == 0 || s_security[_itemId] > block.number,
+            "error security"
+        );
+
+        s_security[_itemId] = block.number;
+        _;
+    } // security modifier to prevent frontrunning
     constructor(uint256 _feePercent) {
         feeAccount = payable(msg.sender);
         feePercent = _feePercent;
@@ -35,9 +51,9 @@ contract MarketPlaceNFT is ReentrancyGuard {
     }
 
     //functions
-    ///sell NFT
+ ///sell NFT
     function sellNFT(
-        IERC721 _nft,
+        ERC721A _nft,
         uint256 _tokenId,
         uint256 _price
     ) external nonReentrant {
@@ -58,7 +74,7 @@ contract MarketPlaceNFT is ReentrancyGuard {
     }
 
     //buy direct
-    function buyNFT(uint256 _itemId) external payable nonReentrant {
+    function buyNFT(uint256 _itemId) external payable nonReentrant securityFrontRunning(_itemId) {
         uint256 _totalPrice = getTotalPrice(_itemId); //getting total price
         Item storage item = items[_itemId];
         require(_itemId > 0 && _itemId <= itemCount, "item doesnt exist"); //checking item
@@ -88,7 +104,7 @@ contract MarketPlaceNFT is ReentrancyGuard {
         seller.push(_seller); //push seller
     }
 
-    function cancelSell(uint256 _itemId) external {
+    function cancelSell(uint256 _itemId) external securityFrontRunning(_itemId) {
         Item storage item = items[_itemId];
         require(msg.sender == item.seller, "you dont are the owner of the nft");
         require(item.sold != true);
@@ -116,6 +132,8 @@ contract MarketPlaceNFT is ReentrancyGuard {
     ////////////////////////////// Auction code
     ///////////////////////////////////////////////////////////////////////////////////////////
 
+
+    
     //State of items
     enum State {
         Active,
@@ -132,7 +150,8 @@ contract MarketPlaceNFT is ReentrancyGuard {
         address payable seller;
         State state;
         bool sold;
-        uint256 creatorFee;
+        uint256 startAt;
+        uint256 endAt;
         address payable highestBidder; // best bidder address
         uint256 highestBid; // best bid amount
     }
@@ -141,6 +160,16 @@ contract MarketPlaceNFT is ReentrancyGuard {
     mapping(uint256 => itemAuction) public itemsAuction; ///mapping de los items
     mapping(address => uint256) public bids; //bids
 
+ modifier securityFrontRunningAuction(uint256 _itemId) {
+           itemAuction storage ItemAuction = itemsAuction[_itemId];    
+               require(
+            s_security[_itemId] == 0 || s_security[_itemId] > block.number,
+            "error security"
+        );
+
+        s_security[_itemId] = block.number;
+        _;
+    }
     //change operator
     function changeOperator(uint256 _itemId, State _newState) public {
         itemAuction storage ItemAuction = itemsAuction[_itemId];
@@ -165,8 +194,7 @@ contract MarketPlaceNFT is ReentrancyGuard {
     function startAuction(
         IERC721 _nftA,
         uint256 _tokenId,
-        uint256 _startPrice,
-        uint256 _creatorFee
+        uint256 _startPrice
     ) public {
         require(_startPrice > 0, "price must be greater than zero");
         itemCountA++;
@@ -179,18 +207,27 @@ contract MarketPlaceNFT is ReentrancyGuard {
             payable(msg.sender),
             State.Active,
             false,
-            _creatorFee,
+            block.timestamp,
+            block.timestamp + 7 days,
             payable(address(0)),
             0
         );
+        emit newNFTAuction(
+            itemCountA,
+            address(_nftA),
+            _tokenId,
+            _startPrice,
+            msg.sender
+        );
     }
-
+    
     function placeOffering(uint256 _itemId) public payable {
         itemAuction storage itemA = itemsAuction[_itemId];
         require(State.Active == itemA.state, "error state is inactive");
         require(itemA.sold == false, "error item sold");
         require(msg.value > itemA.startPrice, "error we need more ether");
         require(msg.value > itemA.highestBid, "error you need send more ether");
+        require(itemA.endAt > block.timestamp, "error auction is over");
         if (itemA.highestBidder != msg.sender) {
             //security
             itemA.highestBidder.transfer(itemA.highestBid); //trasnfer money for old best bidder
@@ -200,7 +237,7 @@ contract MarketPlaceNFT is ReentrancyGuard {
         emit Bid(itemA.highestBidder, itemA.highestBid); // event new best bidder
     }
 
-    event Bid(address bidderAddress, uint256 bidderOffer); // event with best bidder
+   
 
     function closeOffering(uint256 _itemId) external payable {
         uint256 _totalPrice = getTotalPriceAuction(_itemId);
@@ -210,21 +247,38 @@ contract MarketPlaceNFT is ReentrancyGuard {
             msg.sender == ItemAuction.seller,
             "you dont are the owner of the nft"
         );
+        require(ItemAuction.endAt < block.timestamp, "error time is not over");
         require(ItemAuction.sold == false, "error nft sold");
         ItemAuction.sold = true;
         ItemAuction.state = State.Inactive;
         feeAccount.transfer(_totalPrice); //fee for nft marketplace
+      //  withdraw(ItemAuction.highestBid); //trasnfer money for nft creator
         ItemAuction.seller.transfer(ItemAuction.highestBid - _totalPrice); // send value to seller
-        emit End(ItemAuction.highestBidder, ItemAuction.highestBid);
+        ItemAuction.nft.transferFrom(address(this), msg.sender, ItemAuction.tokenId);    
+        emit End(ItemAuction.highestBidder, ItemAuction.highestBid, ItemAuction.tokenId);
     }
 
     function cancelAuction(uint256 _itemId) external {
         itemAuction storage ItemAuction = itemsAuction[_itemId];
-        require(msg.sender == ItemAuction.seller, "you dont are the owner of the nft");
+        require(
+            msg.sender == ItemAuction.seller,
+            "you dont are the owner of the nft"
+        );
         require(ItemAuction.sold != true);
-        ItemAuction.nft.transferFrom(address(this), msg.sender, ItemAuction.tokenId); // trasnfer the nft to ex seller
+        ItemAuction.nft.transferFrom(
+            address(this),
+            msg.sender,
+            ItemAuction.tokenId
+        ); // trasnfer the nft to ex seller
         ItemAuction.state = State.Canceled;
     }
-
-    event End(address Winner, uint256 BestOffer);
+    event Bid(address bidderAddress, uint256 bidderOffer); // event with best bidder
+    event End(address Winner, uint256 BestOffer, uint tokenId);
+    event newNFTAuction(
+        uint256 itemId,
+        address indexed nft,
+        uint256 tokenId,
+        uint256 price,
+        address indexed seller        
+    );
 }
