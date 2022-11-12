@@ -5,7 +5,7 @@ export const Mint = () => {
   const { isConnected } = useAccount();
 
   const { config } = usePrepareContractWrite({
-    address: "0xb2fdA168B938D1E65d779458F1289cF70206af49",
+    address: "0x252201E532a8394b2802A2614b53cb8FF8bA8640",
     abi: [
       {
         inputs: [],
@@ -30,6 +30,8 @@ export const Mint = () => {
           MINT
         </button>
       )}
+      <button>SellNFT</button>
+      <button>Buy</button>
     </div>
   );
 };
