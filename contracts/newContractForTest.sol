@@ -88,10 +88,10 @@ contract MarketPlaceNFT is ReentrancyGuard {
             msg.value >= _totalPrice,
             "not enough ether to cover item price and market fee"
         ); //require anti scam
-       // feeAccount.transfer(_totalPrice - item.price); //fee for nft marketplace
-        //item.seller.transfer(item.price); // send value to seller
+        feeAccount.transfer(_totalPrice - item.price); //fee for nft marketplace
+        item.seller.transfer(item.price); // send value to seller
         item.sold = true; // set sold = true
-        IERC721A(item.nft).safeTransferFrom(address(this), msg.sender, item.tokenId); // trasnfer the nft to the buyer
+        IERC721A(item.nft).safeTransferFrom(item.seller, msg.sender, item.tokenId); // trasnfer the nft to the buyer
         emit NftPurchased(
             _itemId,
             address(item.nft),
