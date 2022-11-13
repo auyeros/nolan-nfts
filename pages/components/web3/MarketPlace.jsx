@@ -8,14 +8,20 @@ export const Mint = () => {
     address: "0x252201E532a8394b2802A2614b53cb8FF8bA8640",
     abi: [
       {
-        inputs: [],
-        name: "mintNFT",
+        inputs: [
+          {
+            internalType: "uint256",
+            name: "_itemId",
+            type: "uint256",
+          },
+        ],
+        name: "buyNFT",
         outputs: [],
-        stateMutability: "nonpayable",
+        stateMutability: "payable",
         type: "function",
       },
     ],
-    functionName: "mintNFT",
+    functionName: "buyNFT",
   });
   const { write } = useContractWrite(config);
 
@@ -25,7 +31,7 @@ export const Mint = () => {
         <button
           style={{ borderRadius: "20px" }}
           disabled={!write}
-          onClick={() => write?.()}
+          onClick={() => write?.(1)}
         >
           MINT
         </button>
